@@ -1,0 +1,94 @@
+---
+title: "Practical Machine Learning Project"
+author: "MBIYA-NGANDU LUBOYA"
+date: "Sunday, September 21, 2014"
+output: pdf_document
+---
+
+##Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+##TODO
+The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. 
+
+You should create a report describing how :
+
+. You built your model, how you used cross validation 
+. What you think the expected out of sample error is 
+. Why you made the choices you did. 
+. You will also use your prediction model to predict 20 different test cases. 
+
+
+##Approach
+
+We will try two mdifferent model and afterwards choose the one gives the best accuracy between
+. Recursive Partitioning and Regression Trees
+. Random Forest
+
+We are expecting to get an out of sample error of about 0.5 %
+##Data processing
+```{r}
+library(caret)
+training <- read.csv("pml-training.csv",na.strings=c("", "NA", "#DIV/0!"))
+
+# For test
+testing <- read.csv("pml-testing.csv",na.strings=c("", "NA", "#DIV/0!"))
+```
+
+Thowing some meaningless columns to avoid noise in the model (Columns that are not relevant for the model and those having more than 90% of NAs), such as: 
+
+. X, user_name, cvtd_timestamp ,  raw_timestamp_part_1 ,  raw_timestamp_part_2, new_window , ...
+
+
+```{r, echo=FALSE}
+training <- training[,colSums(is.na(training))< 0.95*nrow(training)]
+badcol <- c("user_name", "cvtd_timestamp", "raw_timestamp_part_1", "raw_timestamp_part_2", "new_window", "X")
+training <- training[,!(names(training) %in% badcol)]
+```
+
+We now get a dataset with 19622 rows and 54 columns.
+
+For crossvalidation purpose, let divide the training dataset into subtraining set and subtraining_test
+
+```{r}
+inTrain <- createDataPartition(y = training$classe, p = 0.8, list = FALSE)
+subTraining <- training[inTrain,]
+subTraining_test <- training[-inTrain,]
+```
+
+##Model Construction
+
+```{r}
+modFit1 <- train(subTraining$classe ~ ., data = subTraining, method = "rpart")
+modFit1
+```
+
+As we can see, the model as 61.2 % of accuracy.
+Let's consider another algorithm ( Rf) and compare the result
+
+```{r}
+tCtrl <- trainControl(method = "cv", number = 4)
+modFit2 <- train(subTraining$classe ~ ., data = subTraining, method = "rf", prof = TRUE, trControl = tCtrl)
+modFit2
+```
+
+As we can see, this model provides us an accuracy of 99.7 %, which is very intresting  ! It's the one we will use, but let's first crossvalidate it on the subTraining_test and testing dataset to see the behavior.
+
+##Crossvalidation of the model
+
+###Prediction on Subtraining-test
+
+```{r}
+subTrainingPredict <- predict(modFit2, subTraining_test)
+confusionMatrix(subTrainingPredict, subTraining_test$classe)
+```
+
+As we can deduct on the confusion matrix, the out of sample error is 0.2039 %
+It is less than what we expected to have 0.5 %. This suggest that the model is optimisticaly good than the assumption made in approach section.
+###Prediction on the testing dataset
+
+```{r}
+testingPredict <- predict(modFit2, testing)
+```
+
