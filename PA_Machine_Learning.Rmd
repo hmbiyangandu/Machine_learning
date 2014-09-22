@@ -67,7 +67,7 @@ modFit1
 As we can see, the model as 61.2 % of accuracy.
 Let's consider another algorithm ( Rf) and compare the result
 
-```{r}
+```{r cache=TRUE}
 tCtrl <- trainControl(method = "cv", number = 4)
 modFit2 <- train(subTraining$classe ~ ., data = subTraining, method = "rf", prof = TRUE, trControl = tCtrl)
 modFit2
@@ -85,7 +85,7 @@ confusionMatrix(subTrainingPredict, subTraining_test$classe)
 ```
 
 As we can deduct on the confusion matrix, the out of sample error is 0.2039 %
-It is less than what we expected to have 0.5 %. This suggest that the model is optimisticaly good than the assumption made in approach section.
+It is less than what we expected to have 0.5 %. This suggest that the model is optimistically good than the assumption made in approach section.
 ###Prediction on the testing dataset
 
 ```{r}
